@@ -31,18 +31,18 @@ func pathMap(path string, info os.FileInfo, err error) error {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println("Usage:", os.Args[0], "mapPath")
+	if len(os.Args) != 3 {
+		fmt.Println("Usage:", os.Args[0], "HexKitPath MapPath")
 		return
 	}
 	var hexMap hexkitMap
 	var layers layersList
 	pathSep := regexp.MustCompile(`[/:]`)
-	err := filepath.Walk(".", pathMap)
+	err := filepath.Walk(os.Args[1], pathMap)
 	if err != nil {
 		log.Fatal(err)
 	}
-	mapFile := os.Args[1]
+	mapFile := os.Args[2]
 	// Read the file
 	mapBlob, err := ioutil.ReadFile(mapFile)
 	if err != nil {
