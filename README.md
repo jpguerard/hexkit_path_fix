@@ -3,6 +3,8 @@ Fix an HexKit map file after some hex have been moved
 
 This software is alpha quality. Use with care.
 
+This software has only been tested on Linux.
+
 Usage :
 
  - Copy the executable in the HexKit folder (where your hexagon
