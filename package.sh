@@ -1,0 +1,29 @@
+#!/bin/sh
+
+build(){
+  TMPDIR="/home/fevrier/go_tmp" GOOS="$1" GOARCH="$2" go build
+}
+
+make_tar(){
+  echo " * $3"
+  build "$1" "$2"
+  file hexkit_path_fix
+  tar cvf "release/hexkit_path_fix_$3.tar.bz2" hexkit_path_fix LICENSE README.md
+}
+
+make_zip(){
+  echo " * $3"
+  build "$1" "$2"
+  file hexkit_path_fix.exe
+  zip "release/hexkit_path_fix_$3.tar.bz2" hexkit_path_fix.exe LICENSE README.md
+}
+
+mkdir -p release
+make_zip windows 386   win32
+make_zip windows amd64 win64
+make_tar darwin  386   darwin32
+make_tar darwin  amd64 darwin64
+make_tar linux   386   linux32
+make_tar linux   amd64 linux64
+rm -f hexkit_path_fix.exe
+
