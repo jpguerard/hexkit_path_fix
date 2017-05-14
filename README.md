@@ -10,6 +10,7 @@ Usage :
    collections are stored).
 
  - From a command window, run:
+
 ```
     REM On Windows
     hexkit_path_fix   hexKitPath mapPath > newMap
@@ -17,10 +18,13 @@ Usage :
     # On Linux
     ./hexkit_path_fix hexKitPath mapPath > newMap
 ```
+
 For example:
+
 ```
     ./hexkit_path_fix ~/RPG__Mapping/HexKit ~/MyMaps/Test.map > ~/NewMap.map
 ```
+
 The program will run a search for all PNG files under the hexkit directory
 and use this information to locate the new tile position.
 
