@@ -35,9 +35,13 @@ func main() {
 		fmt.Println("Usage:", os.Args[0], "HexKitPath MapPath")
 		return
 	}
+	pathSeparator := "/"
+	if os.PathSeparator != '/' {
+		pathSeparator = "\\\\"
+	}
 	var hexMap hexkitMap
 	var layers layersList
-	pathSep := regexp.MustCompile(`[/:]`)
+	pathBreak := regexp.MustCompile(`([/:]|\\\\)`)
 	err := filepath.Walk(os.Args[1], pathMap)
 	if err != nil {
 		log.Fatal(err)
@@ -108,10 +112,10 @@ func main() {
 				var selected string
 			pathSearch:
 				for _, p := range pathList {
-					splitPath := pathSep.Split(p, -1)
+					splitPath := pathBreak.Split(p, -1)
 					for k, segment := range splitPath {
 						if segment == targetCollection {
-							foundPath := "/" + strings.Join(splitPath[k+1:], "/")
+							foundPath := pathSeparator + strings.Join(splitPath[k+1:], pathSeparator)
 							if targetPath == foundPath {
 								selected = targetCollection + ":" + foundPath
 								break pathSearch
