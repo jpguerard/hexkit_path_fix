@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
@@ -35,6 +34,7 @@ func main() {
 		fmt.Println("Usage:", os.Args[0], "CollectionPath... MapPath")
 		return
 	}
+	// Which path separator should we use
 	pathSeparator := "/"
 	if os.PathSeparator != '/' {
 		pathSeparator = "\\\\"
@@ -45,8 +45,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-	var hexMap hexkitMap
-	var layers layersList
 	}
 	// Read the file
 	mapFile := os.Args[len(os.Args)-1]
@@ -55,6 +53,7 @@ func main() {
 		log.Fatal("error:", err)
 	}
 	// Decode it in hexMap
+	var hexMap hexkitMap
 	err = json.Unmarshal(mapBlob, &hexMap)
 	if err != nil {
 		log.Fatal("error:", mapFile, ":", err)
@@ -64,10 +63,12 @@ func main() {
 	if !ok {
 		log.Fatal("error: no layer in", mapFile)
 	}
+	var layers layersList
 	err = json.Unmarshal(layersBlob, &layers)
 	if err != nil {
 		log.Fatal("error:", mapFile, ":", err)
 	}
+	// Search for tiles
 	layersModified := false
 	for _, v := range layers {
 		var tiles tilesList
@@ -81,6 +82,7 @@ func main() {
 			log.Println("error:", mapFile, ":", err)
 			continue
 		}
+		// Search for the source of tiles
 		tilesModified := false
 		for _, t := range tiles {
 			// Ignore undefined tiles
@@ -94,18 +96,21 @@ func main() {
 			}
 			source, ok := sourceBlob.(string)
 			if !ok {
-				log.Println("error: incorrect source found in", mapFile)
+				log.Println("error: incorrect tile source found in", mapFile)
 				continue
 			}
+			// Skip the default blank tiles
 			if source[:6] == "Blank:" {
 				continue
 			}
+			// Have we found the tile
 			fileName := filepath.Base(source)
 			pathList, ok := fileList[fileName]
 			if !ok {
 				log.Println("error: tile", source, "not found in", mapFile)
 				continue
 			}
+			// Search for the current path in the
 			firstSplit := strings.SplitN(source, ":", 2)
 			if len(firstSplit) >= 2 {
 				targetCollection := firstSplit[0]
