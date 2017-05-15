@@ -41,7 +41,6 @@ func main() {
 	}
 	var hexMap hexkitMap
 	var layers layersList
-	pathBreak := regexp.MustCompile(`([/:]|\\\\)`)
 	err := filepath.Walk(os.Args[1], pathMap)
 	if err != nil {
 		log.Fatal(err)
@@ -112,7 +111,7 @@ func main() {
 				var selected string
 			pathSearch:
 				for _, p := range pathList {
-					splitPath := pathBreak.Split(p, -1)
+					splitPath := strings.Split(p, string(os.PathSeparator))
 					for k, segment := range splitPath {
 						if segment == targetCollection {
 							foundPath := pathSeparator + strings.Join(splitPath[k+1:], pathSeparator)
