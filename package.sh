@@ -18,6 +18,8 @@ make_zip(){
   zip "release/hexkit_path_fix_$3.zip" hexkit_path_fix.exe LICENSE README.md
 }
 
+rm -f release/*
+rmdir release
 mkdir -p release
 make_zip windows 386   win32
 make_zip windows amd64 win64
