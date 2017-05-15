@@ -31,22 +31,25 @@ func pathMap(path string, info os.FileInfo, err error) error {
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Println("Usage:", os.Args[0], "HexKitPath MapPath")
+	if len(os.Args) < 3 {
+		fmt.Println("Usage:", os.Args[0], "CollectionPath... MapPath")
 		return
 	}
 	pathSeparator := "/"
 	if os.PathSeparator != '/' {
 		pathSeparator = "\\\\"
 	}
+	// Build the list of PNG files
+	for i := 0; i <= (len(os.Args) - 2); i++ {
+		err := filepath.Walk(os.Args[1], pathMap)
+		if err != nil {
+			log.Fatal(err)
+		}
 	var hexMap hexkitMap
 	var layers layersList
-	err := filepath.Walk(os.Args[1], pathMap)
-	if err != nil {
-		log.Fatal(err)
 	}
-	mapFile := os.Args[2]
 	// Read the file
+	mapFile := os.Args[len(os.Args)-1]
 	mapBlob, err := ioutil.ReadFile(mapFile)
 	if err != nil {
 		log.Fatal("error:", err)

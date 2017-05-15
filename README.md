@@ -13,16 +13,20 @@ Usage :
 
 ```
     REM On Windows
-    hexkit_path_fix   hexKitPath mapPath > newMap
+    hexkit_path_fix   CollectionPath... mapPath > newMap
 
     # On Linux
-    ./hexkit_path_fix hexKitPath mapPath > newMap
+    ./hexkit_path_fix CollectionPath... mapPath > newMap
 ```
 
 For example:
 
 ```
-    ./hexkit_path_fix ~/RPG__Mapping/HexKit ~/MyMaps/Test.map > ~/NewMap.map
+    # The HexKit directory contains all collections
+    ./hexkit_path_fix RPG_Mapping/HexKit MyMaps/Test.map > ~/NewMap.map
+
+    # List individual collections
+    ./hexkit_path_fix "RPG_Mapping/HexKit/HK-Fantasy" "RPG_Mapping/HexKit/HK-Traveling Through Dangerous Scenery" ~/MyMaps/Test.map > ~/NewMap.map
 ```
 
 The program will run a search for all PNG files under the hexkit directory
