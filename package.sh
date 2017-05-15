@@ -15,7 +15,7 @@ make_zip(){
   echo " * $3"
   build "$1" "$2"
   file hexkit_path_fix.exe
-  zip "release/hexkit_path_fix_$3.tar.bz2" hexkit_path_fix.exe LICENSE README.md
+  zip "release/hexkit_path_fix_$3.zip" hexkit_path_fix.exe LICENSE README.md
 }
 
 mkdir -p release
