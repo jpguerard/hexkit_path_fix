@@ -134,6 +134,7 @@ func main() {
 							}
 						}
 					}
+					// A new value was found: update the source
 					if selected != "" {
 						tilesModified = true
 						t["source"] = selected
