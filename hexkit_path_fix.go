@@ -113,32 +113,35 @@ func main() {
 			}
 			// Search for the current path in the
 			firstSplit := strings.SplitN(source, ":", 2)
-			if len(firstSplit) >= 2 {
-				targetCollection := firstSplit[0]
-				targetPath := firstSplit[1]
-				var bestMatch int
-				var selected string
-			pathSearch:
-				for _, p := range pathList {
-					splitPath := strings.Split(p, string(os.PathSeparator))
-					for k, segment := range splitPath {
-						if segment == targetCollection {
-							foundPath := pathSeparator + strings.Join(splitPath[k+1:], pathSeparator)
-							if targetPath == foundPath {
-								selected = targetCollection + ":" + foundPath
-								break pathSearch
-							}
-							if len(foundPath) > bestMatch {
-								bestMatch = len(foundPath)
-								selected = targetCollection + ":" + foundPath
-							}
-						}
+			if len(firstSplit) < 2 {
+				log.Println("Layer", i+1, "Tile", j+1, "incorrect source:", source)
+				continue
+			}
+			targetCollection := firstSplit[0]
+			targetPath := firstSplit[1]
+			var bestMatch int
+			var selected string
+		pathSearch:
+			for _, p := range pathList {
+				splitPath := strings.Split(p, string(os.PathSeparator))
+				for k, segment := range splitPath {
+					if segment != targetCollection {
+						continue
 					}
-					// A new value was found: update the source
-					if selected != "" {
-						tilesModified = true
-						t["source"] = selected
+					foundPath := pathSeparator + strings.Join(splitPath[k+1:], pathSeparator)
+					if targetPath == foundPath {
+						selected = targetCollection + ":" + foundPath
+						break pathSearch
 					}
+					if len(foundPath) > bestMatch {
+						bestMatch = len(foundPath)
+						selected = targetCollection + ":" + foundPath
+					}
+				}
+				// A new value was found: update the source
+				if selected != "" {
+					tilesModified = true
+					t["source"] = selected
 				}
 			}
 		}
