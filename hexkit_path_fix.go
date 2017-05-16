@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -103,7 +104,8 @@ func main() {
 				continue
 			}
 			// Have we found the tile
-			fileName := filepath.Base(source)
+			nameSelect := regexp.MustCompile(`[^:/\\]+$`)
+			fileName := nameSelect.FindString(source)
 			pathList, ok := fileList[fileName]
 			if !ok {
 				log.Println("Layer", i+1, "Tile", j+1, "unable to find tile image file for", source)
