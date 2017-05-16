@@ -1,5 +1,6 @@
 # hexkit_path_fix
-Fix an HexKit map file after some hex have been moved
+Fix an [HexKit](http://www.hex-kit.com/) map file after some hex have
+been moved
 
 *This software is alpha quality. Use with care.*
 *This software has only been tested on Linux.*
