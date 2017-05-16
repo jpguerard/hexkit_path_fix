@@ -29,6 +29,12 @@ func pathMap(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+func failOnError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage:", os.Args[0], "CollectionPath... MapPath")
@@ -42,61 +48,54 @@ func main() {
 	// Build the list of PNG files
 	for i := 0; i <= (len(os.Args) - 2); i++ {
 		err := filepath.Walk(os.Args[1], pathMap)
-		if err != nil {
-			log.Fatal(err)
-		}
+		failOnError(err)
 	}
 	// Read the file
 	mapFile := os.Args[len(os.Args)-1]
 	mapBlob, err := ioutil.ReadFile(mapFile)
-	if err != nil {
-		log.Fatal("error:", err)
-	}
+	failOnError(err)
+
 	// Decode it in hexMap
 	var hexMap hexkitMap
 	err = json.Unmarshal(mapBlob, &hexMap)
-	if err != nil {
-		log.Fatal("error:", mapFile, ":", err)
-	}
+	failOnError(err)
+
 	// Get the layers list
 	layersBlob, ok := hexMap["layers"]
 	if !ok {
-		log.Fatal("error: no layer in", mapFile)
+		log.Fatal("Map format error (no layers found)")
 	}
 	var layers layersList
 	err = json.Unmarshal(layersBlob, &layers)
-	if err != nil {
-		log.Fatal("error:", mapFile, ":", err)
-	}
+	failOnError(err)
+
 	// Search for tiles
 	layersModified := false
-	for _, v := range layers {
+	for i, v := range layers {
 		var tiles tilesList
 		tilesBlob, ok := v["tiles"]
 		if !ok {
-			log.Println("error: no tiles in", mapFile)
-			continue
+			log.Fatal("Map format error: no tiles in layer", i+1)
 		}
 		err = json.Unmarshal(tilesBlob, &tiles)
 		if err != nil {
-			log.Println("error:", mapFile, ":", err)
-			continue
+			log.Fatal("Map format error in layer", i+1, ":", err)
 		}
 		// Search for the source of tiles
 		tilesModified := false
-		for _, t := range tiles {
+		for j, t := range tiles {
 			// Ignore undefined tiles
 			if t == nil {
 				continue
 			}
 			sourceBlob, ok := t["source"]
 			if !ok {
-				log.Println("error: tile with no source in", mapFile)
+				log.Println("Layer", i+1, "Tile", j+1, "no tile source found")
 				continue
 			}
 			source, ok := sourceBlob.(string)
 			if !ok {
-				log.Println("error: incorrect tile source found in", mapFile)
+				log.Println("Layer", i+1, "Tile", j+1, "the tile source is incorrect (not a string)")
 				continue
 			}
 			// Skip the default blank tiles
@@ -107,7 +106,7 @@ func main() {
 			fileName := filepath.Base(source)
 			pathList, ok := fileList[fileName]
 			if !ok {
-				log.Println("error: tile", source, "not found in", mapFile)
+				log.Println("Layer", i+1, "Tile", j+1, "unable to find tile image file for", source)
 				continue
 			}
 			// Search for the current path in the
@@ -142,27 +141,18 @@ func main() {
 		}
 		if tilesModified {
 			tilesBlob, err := json.Marshal(tiles)
-			if err != nil {
-				log.Println("error:", err)
-			}
+			failOnError(err)
 			v["tiles"] = tilesBlob
 			layersModified = true
 		}
 	}
 	if layersModified {
 		layersBlob, err := json.Marshal(layers)
-		if err != nil {
-			log.Println("error:", err)
-		}
+		failOnError(err)
 		hexMap["layers"] = layersBlob
 	}
 	b, err := json.Marshal(hexMap)
-	if err != nil {
-		log.Println("error:", err)
-	}
+	failOnError(err)
 	_, err = os.Stdout.Write(b)
-	if err != nil {
-		log.Println("error:", err)
-	}
-
+	failOnError(err)
 }
