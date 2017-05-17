@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -15,6 +17,41 @@ type jsonObjectRaw map[string]json.RawMessage
 type jsonObject map[string]interface{}
 
 var fileList = make(map[string][]string, 4096)
+
+func findHomeDir() string {
+	u, err := user.Current()
+	failOnError(err)
+	return u.HomeDir
+}
+
+// https://electron.atom.io/docs/api/app/#appgetpathname
+func getSettings() jsonObjectRaw {
+	var settings string
+	var userConfig string
+	var jsonSettingsRaw jsonObjectRaw
+	switch runtime.GOOS {
+	case "darwin":
+		homeDir := findHomeDir()
+		userConfig = filepath.Join(homeDir, "Library", "Application Support")
+	case "linux":
+		userConfig = os.Getenv("XDG_CONFIG_HOME")
+		if userConfig == "" {
+			homeDir := findHomeDir()
+			userConfig = filepath.Join(homeDir, ".config")
+		}
+	case "windows":
+		userConfig = os.Getenv("APPDATA")
+		if userConfig == "" {
+			log.Fatal("Unable to find user config (no APPDATA environment variable)")
+		}
+	}
+	settings = filepath.Join(userConfig, "hex-kit", "Settings")
+	settingsBlob, err := ioutil.ReadFile(settings)
+	failOnError(err)
+	err = json.Unmarshal(settingsBlob, &jsonSettingsRaw)
+	failOnError(err)
+	return jsonSettingsRaw
+}
 
 // Search fon all png files under the current path
 func pathMap(path string, info os.FileInfo, err error) error {
