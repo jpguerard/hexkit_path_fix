@@ -41,11 +41,6 @@ func main() {
 		fmt.Println("Usage:", os.Args[0], "CollectionPath... MapPath")
 		return
 	}
-	// Which path separator should we use
-	pathSeparator := "/"
-	if os.PathSeparator != '/' {
-		pathSeparator = "\\\\"
-	}
 	// Build the list of PNG files
 	for i := 0; i <= (len(os.Args) - 2); i++ {
 		err := filepath.Walk(os.Args[1], pathMap)
@@ -128,7 +123,7 @@ func main() {
 					if segment != targetCollection {
 						continue
 					}
-					foundPath := pathSeparator + strings.Join(splitPath[k+1:], pathSeparator)
+					foundPath := "/" + strings.Join(splitPath[k+1:], "/")
 					if targetPath == foundPath {
 						selected = targetCollection + ":" + foundPath
 						break pathSearch
