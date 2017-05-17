@@ -11,9 +11,8 @@ import (
 	"strings"
 )
 
-type hexkitMap map[string]json.RawMessage
-type layersList []map[string]json.RawMessage
-type tilesList []map[string]interface{}
+type jsonObjectRaw map[string]json.RawMessage
+type jsonObject map[string]interface{}
 
 var fileList = make(map[string][]string, 4096)
 
@@ -52,7 +51,7 @@ func main() {
 	failOnError(err)
 
 	// Decode it in hexMap
-	var hexMap hexkitMap
+	var hexMap jsonObjectRaw
 	err = json.Unmarshal(mapBlob, &hexMap)
 	failOnError(err)
 
@@ -61,14 +60,14 @@ func main() {
 	if !ok {
 		log.Fatal("Map format error (no layers found)")
 	}
-	var layers layersList
+	var layers []jsonObjectRaw
 	err = json.Unmarshal(layersBlob, &layers)
 	failOnError(err)
 
 	// Search for tiles
 	layersModified := false
 	for i, v := range layers {
-		var tiles tilesList
+		var tiles []jsonObject
 		tilesBlob, ok := v["tiles"]
 		if !ok {
 			log.Fatal("Map format error: no tiles in layer", i+1)
