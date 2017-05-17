@@ -24,32 +24,48 @@ func findHomeDir() string {
 	return u.HomeDir
 }
 
+func readSettingsBlob(userConfig string) ([]byte, error) {
+	settings := filepath.Join(userConfig, "hex-kit", "Settings")
+	settingsBlob, err := ioutil.ReadFile(settings)
+	return settingsBlob, err
+}
+
 // https://electron.atom.io/docs/api/app/#appgetpathname
 func getSettings() jsonObjectRaw {
-	var settings string
 	var userConfig string
+	var settingsBlob []byte
 	var jsonSettingsRaw jsonObjectRaw
+	var err error
 	switch runtime.GOOS {
 	case "darwin":
 		homeDir := findHomeDir()
 		userConfig = filepath.Join(homeDir, "Library", "Application Support")
+		settingsBlob, err = readSettingsBlob(userConfig)
 	case "linux":
 		userConfig = os.Getenv("XDG_CONFIG_HOME")
-		if userConfig == "" {
+		if userConfig != "" {
+			settingsBlob, err = readSettingsBlob(userConfig)
+		}
+		if userConfig == "" || err != nil {
 			homeDir := findHomeDir()
 			userConfig = filepath.Join(homeDir, ".config")
+			settingsBlob, err = readSettingsBlob(userConfig)
 		}
 	case "windows":
 		userConfig = os.Getenv("APPDATA")
 		if userConfig == "" {
 			log.Fatal("Unable to find user config (no APPDATA environment variable)")
 		}
+		settingsBlob, err = readSettingsBlob(userConfig)
 	}
-	settings = filepath.Join(userConfig, "hex-kit", "Settings")
-	settingsBlob, err := ioutil.ReadFile(settings)
-	failOnError(err)
+	// Did the log read succeed
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = json.Unmarshal(settingsBlob, &jsonSettingsRaw)
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return jsonSettingsRaw
 }
 
