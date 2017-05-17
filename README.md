@@ -3,7 +3,7 @@ Fix an [HexKit](http://www.hex-kit.com/) map file after some hex have
 been moved
 
 *This software is alpha quality. Use with care.*
-*This software has only been tested on Linux.*
+*Tested on Windows and Linux.*
 
 Usage :
 
@@ -36,4 +36,8 @@ and use this information to locate the new tile position.
 Do not use the same name for the new map, you do not
 want to lose it should there be an problem.
 
-Moving tiles to a new collection is currently not supported.
+Limitations:
+
+ - Moving tiles to a new collection is currently not supported.
+ - Generators are not currently converted.
+
