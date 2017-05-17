@@ -20,7 +20,9 @@ var fileList = make(map[string][]string, 4096)
 
 func findHomeDir() string {
 	u, err := user.Current()
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return u.HomeDir
 }
 
@@ -82,12 +84,6 @@ func pathMap(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-func failOnError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func main() {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage:", os.Args[0], "CollectionPath... MapPath")
@@ -96,17 +92,23 @@ func main() {
 	// Build the list of PNG files
 	for i := 0; i <= (len(os.Args) - 2); i++ {
 		err := filepath.Walk(os.Args[1], pathMap)
-		failOnError(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	// Read the file
 	mapFile := os.Args[len(os.Args)-1]
 	mapBlob, err := ioutil.ReadFile(mapFile)
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Decode it in hexMap
 	var hexMap jsonObjectRaw
 	err = json.Unmarshal(mapBlob, &hexMap)
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Get the layers list
 	layersBlob, ok := hexMap["layers"]
@@ -115,7 +117,9 @@ func main() {
 	}
 	var layers []jsonObjectRaw
 	err = json.Unmarshal(layersBlob, &layers)
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Search for tiles
 	layersModified := false
@@ -194,18 +198,26 @@ func main() {
 		}
 		if tilesModified {
 			tilesBlob, err := json.Marshal(tiles)
-			failOnError(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 			v["tiles"] = tilesBlob
 			layersModified = true
 		}
 	}
 	if layersModified {
 		layersBlob, err := json.Marshal(layers)
-		failOnError(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 		hexMap["layers"] = layersBlob
 	}
 	b, err := json.Marshal(hexMap)
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	_, err = os.Stdout.Write(b)
-	failOnError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
