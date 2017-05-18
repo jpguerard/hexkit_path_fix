@@ -2,7 +2,6 @@
 Fix an [HexKit](http://www.hex-kit.com/) map file after some hex have
 been moved
 
-*This software is alpha quality. Use with care.*
 *Tested on Windows and Linux.*
 
 Usage :
