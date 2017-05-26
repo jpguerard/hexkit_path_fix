@@ -13,7 +13,7 @@ Usage :
 
 ```
     REM On Windows
-    hexkit_path_fix HexKitPath  mapPath > newMap
+    hexkit_path_fix.exe HexKitPath  mapPath > newMap
 
     # On Linux
     ./hexkit_path_fix HexKitPath mapPath > newMap
@@ -26,7 +26,7 @@ For example:
     hexkit_path_fix.exe "C:\Hex Kit-win32-x64" Octarine.map > NewOctarine.map
 
     # On Linux
-    hexkit_path_fix.exe "~/RPG_Mapping/Hex Kit-linux-x64" Octarine.map > NewOctarine.map
+    hexkit_path_fix "~/RPG_Mapping/Hex Kit-linux-x64" Octarine.map > NewOctarine.map
 
 ```
 
