@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strings"
 )
 
 type jsonObjectRaw map[string]json.RawMessage
@@ -157,6 +156,7 @@ func main() {
 		return
 	}
 
+	tilepathCut := regexp.MustCompile(`:/{0,2}`)
 	// Build the list of collections
 	collectionsDir := make(map[string]string)
 	settings := getSettings()
@@ -259,7 +259,7 @@ func main() {
 				continue
 			}
 			// Search for the current path in the
-			firstSplit := strings.SplitN(source, ":", 2)
+			firstSplit := tilepathCut.Split(source, 2)
 			if len(firstSplit) < 2 {
 				log.Println("Layer", i+1, "Tile", j+1, "incorrect source:", source)
 				continue
