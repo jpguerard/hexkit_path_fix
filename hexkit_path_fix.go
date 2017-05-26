@@ -20,6 +20,9 @@ type tilePosition struct {
 	path       string
 }
 
+// Log to standard error
+var stderr = log.New(os.Stderr, "", 0)
+
 var fileList = make(map[string][]tilePosition, 4096)
 
 func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
@@ -132,7 +135,8 @@ func getSettings() jsonObjectRaw {
 func pathMap(collectionName, basePath string) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatal("fatal: while searching for PNG files:", err)
+			stderr.Println("Warning: while searching for PNG files: ", err)
+			return nil
 		}
 		tileName := info.Name()
 		lenPath := len(path)
