@@ -23,12 +23,13 @@ type tilePosition struct {
 // Log to standard error
 var stderr = log.New(os.Stderr, "", 0)
 
+// List of known file position
 var fileList = make(map[string][]tilePosition, 4096)
 
 func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 	blob, ok := r[k]
 	if !ok {
-		return nil, fmt.Errorf("No \"%s\" key in object", k)
+		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var rawSlice []jsonObjectRaw
 	err := json.Unmarshal(blob, &rawSlice)
@@ -41,7 +42,7 @@ func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 func getJSONSlice(r jsonObjectRaw, k string) (*[]jsonObject, error) {
 	blob, ok := r[k]
 	if !ok {
-		return nil, fmt.Errorf("No \"%s\" key in object", k)
+		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var decodedSlice []jsonObject
 	err := json.Unmarshal(blob, &decodedSlice)
@@ -54,7 +55,7 @@ func getJSONSlice(r jsonObjectRaw, k string) (*[]jsonObject, error) {
 func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 	blob, ok := r[k]
 	if !ok {
-		return nil, fmt.Errorf("No \"%s\" key in object", k)
+		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var decodedObject jsonObjectRaw
 	err := json.Unmarshal(blob, &decodedObject)
@@ -67,7 +68,7 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 func getJSONObject(r jsonObjectRaw, k string) (*jsonObject, error) {
 	blob, ok := r[k]
 	if !ok {
-		return nil, fmt.Errorf("No \"%s\" key in object", k)
+		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var decodedObject jsonObject
 	err := json.Unmarshal(blob, &decodedObject)
@@ -80,14 +81,14 @@ func getJSONObject(r jsonObjectRaw, k string) (*jsonObject, error) {
 func findHomeDir() string {
 	u, err := user.Current()
 	if err != nil {
-		log.Fatal("error: unable to get the username:", err)
+		stderr.Fatal("Error: unable to get the username: ", err)
 	}
 	return u.HomeDir
 }
 
 func readSettingsBlob(userConfig string) ([]byte, error) {
 	settings := filepath.Join(userConfig, "hex-kit", "Settings")
-	log.Print("Reading user settings from: ", settings)
+	stderr.Print("Reading user settings from: ", settings)
 	settingsBlob, err := ioutil.ReadFile(settings)
 	return settingsBlob, err
 }
@@ -116,17 +117,17 @@ func getSettings() jsonObjectRaw {
 	case "windows":
 		userConfig = os.Getenv("APPDATA")
 		if userConfig == "" {
-			log.Fatal("Unable to find user config (no APPDATA environment variable)")
+			stderr.Fatal("Error: unable to find user config (no APPDATA environment variable)")
 		}
 		settingsBlob, err = readSettingsBlob(userConfig)
 	}
 	// Did the log read succeed
 	if err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 	err = json.Unmarshal(settingsBlob, &settingsRaw)
 	if err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 	return settingsRaw
 }
@@ -143,11 +144,11 @@ func pathMap(collectionName, basePath string) filepath.WalkFunc {
 		if lenPath > 4 && path[lenPath-4:] == ".png" {
 			relPathTile, err := filepath.Rel(basePath, path)
 			if err != nil {
-				log.Fatal("fatal:", path, "is not under", basePath, ":", err)
+				stderr.Fatal("Error: ", path, " is not under ", basePath, ": ", err)
 			}
 			var tp tilePosition
 			tp.collection = collectionName
-			tp.path = relPathTile
+			tp.path = filepath.ToSlash(filepath.Clean(relPathTile))
 			fileList[tileName] = append(fileList[tileName], tp)
 		}
 		return nil
@@ -156,7 +157,7 @@ func pathMap(collectionName, basePath string) filepath.WalkFunc {
 
 func main() {
 	if len(os.Args) != 3 {
-		log.Println("Usage:", os.Args[0], "HexkitPath MapPath")
+		stderr.Println("Usage:", os.Args[0], "HexkitPath MapPath")
 		return
 	}
 
@@ -168,13 +169,13 @@ func main() {
 	settings := getSettings()
 	collections, err := getJSONRawObject(settings, "tiles")
 	if err != nil {
-		log.Fatal("Error: unable to parse user settings:", err)
+		stderr.Fatal("Error: unable to parse user settings: ", err)
 	}
 	for name, collectionBlob := range *collections {
 		var collection jsonObject
 		err := json.Unmarshal(collectionBlob, &collection)
 		if err != nil {
-			log.Fatal("Error: unable to parse user settings:", err)
+			stderr.Fatal("Error: unable to parse user settings: ", err)
 		}
 		// Ignore source if hidden
 		hiddenIntf, ok := collection["hidden"]
@@ -186,11 +187,11 @@ func main() {
 		}
 		pathIntf, ok := collection["path"]
 		if !ok {
-			log.Fatal("Error: unable to parse user settings: no path for", name)
+			stderr.Fatal("Error: unable to parse user settings: no path for", name)
 		}
 		path, ok := pathIntf.(string)
 		if !ok {
-			log.Fatal("Error: unable to parse user settings: the path for", name, "is not a string")
+			stderr.Fatal("Error: unable to parse user settings: the path for", name, "is not a string")
 		}
 		// Relative collection path
 		if !filepath.IsAbs(path) {
@@ -205,27 +206,27 @@ func main() {
 	for name, path := range collectionsDir {
 		err := filepath.Walk(path, pathMap(name, path))
 		if err != nil {
-			log.Fatal(err)
+			stderr.Fatal(err)
 		}
 	}
 	// Read the file
 	mapFile := os.Args[2]
 	mapBlob, err := ioutil.ReadFile(mapFile)
 	if err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 
 	// Decode it in hexMap
 	var hexMap jsonObjectRaw
 	err = json.Unmarshal(mapBlob, &hexMap)
 	if err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 
 	// Get the layers list
 	layers, err := getJSONRawSlice(hexMap, "layers")
 	if err != nil {
-		log.Fatal("Map format error", err)
+		stderr.Fatal("Map format error", err)
 	}
 
 	// Search for tiles
@@ -233,7 +234,7 @@ func main() {
 	for i, v := range *layers {
 		tiles, err := getJSONSlice(v, "tiles")
 		if err != nil {
-			log.Fatal("Map format error in layer", i+1, ":", err)
+			stderr.Fatal("Map format error in layer ", i+1, ": ", err)
 		}
 		// Search for the source of tiles
 		tilesModified := false
@@ -244,12 +245,12 @@ func main() {
 			}
 			sourceBlob, ok := t["source"]
 			if !ok {
-				log.Println("Layer", i+1, "Tile", j+1, "no tile source found")
+				stderr.Println("Warning: layer", i+1, "tile", j+1, "no tile source found")
 				continue
 			}
 			source, ok := sourceBlob.(string)
 			if !ok {
-				log.Println("Layer", i+1, "Tile", j+1, "the tile source is incorrect (not a string)")
+				stderr.Println("Warning: layer", i+1, "tile", j+1, "the tile source is incorrect (not a string)")
 				continue
 			}
 			// Skip the default blank tiles
@@ -260,13 +261,13 @@ func main() {
 			fileName := nameSelect.FindString(source)
 			pathList, ok := fileList[fileName]
 			if !ok {
-				log.Println("Layer", i+1, "Tile", j+1, "unable to find tile image file for", source)
+				stderr.Println("Warning: layer", i+1, "tile", j+1, "unable to find tile image file for", source)
 				continue
 			}
 			// Search for the current path in the
 			firstSplit := tilepathCut.Split(source, 2)
 			if len(firstSplit) < 2 {
-				log.Println("Layer", i+1, "Tile", j+1, "incorrect source:", source)
+				stderr.Println("Warning: layer", i+1, "tile", j+1, "incorrect source: ", source)
 				continue
 			}
 			targetCollection := firstSplit[0]
@@ -297,7 +298,7 @@ func main() {
 		if tilesModified {
 			tilesBlob, err := json.Marshal(tiles)
 			if err != nil {
-				log.Fatal(err)
+				stderr.Fatal(err)
 			}
 			v["tiles"] = tilesBlob
 			layersModified = true
@@ -306,16 +307,16 @@ func main() {
 	if layersModified {
 		layersBlob, err := json.Marshal(layers)
 		if err != nil {
-			log.Fatal(err)
+			stderr.Fatal(err)
 		}
 		hexMap["layers"] = layersBlob
 	}
 	b, err := json.Marshal(hexMap)
 	if err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 	_, err = os.Stdout.Write(b)
 	if err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 }
