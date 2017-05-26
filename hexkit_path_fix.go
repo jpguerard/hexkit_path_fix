@@ -291,7 +291,7 @@ func main() {
 			// A new value was found: update the source
 			if selected.collection != "" && selected.path != "" {
 				tilesModified = true
-				t["source"] = selected.collection + ":" + selected.path
+				t["source"] = selected.collection + "://" + selected.path
 			}
 		}
 		if tilesModified {
