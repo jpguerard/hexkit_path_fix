@@ -160,6 +160,8 @@ func main() {
 		return
 	}
 
+	// Prepare regexp
+	nameSelect := regexp.MustCompile(`[^:/\\]+$`)
 	tilepathCut := regexp.MustCompile(`:/{0,2}`)
 	// Build the list of collections
 	collectionsDir := make(map[string]string)
@@ -255,7 +257,6 @@ func main() {
 				continue
 			}
 			// Have we found the tile
-			nameSelect := regexp.MustCompile(`[^:/\\]+$`)
 			fileName := nameSelect.FindString(source)
 			pathList, ok := fileList[fileName]
 			if !ok {
