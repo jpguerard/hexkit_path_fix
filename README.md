@@ -4,6 +4,12 @@ been moved
 
 *Tested on Windows and Linux.*
 
+hexkit_path_fix will update an HexKit map to work with the current
+tiles positions.
+
+It can be used to fix a map before using it on another computer with
+a different tile organization.
+
 Usage :
 
  - Copy the executable in the HexKit folder (where your hexagon
