@@ -187,7 +187,7 @@ func main() {
 			log.Fatal("Error: unable to parse user settings: the path for", name, "is not a string")
 		}
 		// Relative collection path
-		if path[0] != os.PathSeparator {
+		if !filepath.IsAbs(path) {
 			collectionsDir[name] = filepath.Join(os.Args[1], "resources", "app.asar.unpacked", path)
 			continue
 		}
