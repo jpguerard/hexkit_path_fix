@@ -93,7 +93,7 @@ func readMapFile(path string) (*jsonObjectRaw, error) {
 	var hexMap jsonObjectRaw
 	err = json.Unmarshal(mapBlob, &hexMap)
 	if err != nil {
-		return nil, errors.Wrap(err, "map file decode failed")
+		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &hexMap, nil
 }
