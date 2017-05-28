@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+
+	"github.com/pkg/errors"
 )
 
 type jsonObjectRaw map[string]json.RawMessage
@@ -26,6 +28,9 @@ var stderr = log.New(os.Stderr, "", 0)
 // List of known file position
 var fileList = make(map[string][]tilePosition, 4096)
 
+var nameSelect = regexp.MustCompile(`[^:/\\]+$`)
+var tilepathCut = regexp.MustCompile(`:/{0,2}`)
+
 func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 	blob, ok := r[k]
 	if !ok {
@@ -34,7 +39,7 @@ func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 	var rawSlice []jsonObjectRaw
 	err := json.Unmarshal(blob, &rawSlice)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "JSON unmarshal failed")
 	}
 	return &rawSlice, nil
 }
@@ -47,7 +52,7 @@ func getJSONSlice(r jsonObjectRaw, k string) (*[]jsonObject, error) {
 	var decodedSlice []jsonObject
 	err := json.Unmarshal(blob, &decodedSlice)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "JSON unmarshal failed")
 	}
 	return &decodedSlice, nil
 }
@@ -60,7 +65,7 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 	var decodedObject jsonObjectRaw
 	err := json.Unmarshal(blob, &decodedObject)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "JSON unmarshal failed")
 	}
 	return &decodedObject, nil
 }
@@ -73,7 +78,7 @@ func getJSONObject(r jsonObjectRaw, k string) (*jsonObject, error) {
 	var decodedObject jsonObject
 	err := json.Unmarshal(blob, &decodedObject)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "JSON unmarshal failed")
 	}
 	return &decodedObject, nil
 }
@@ -94,7 +99,7 @@ func readSettingsBlob(userConfig string) ([]byte, error) {
 }
 
 // https://electron.atom.io/docs/api/app/#appgetpathname
-func getSettings() jsonObjectRaw {
+func getSettings() (jsonObjectRaw, error) {
 	var userConfig string
 	var settingsBlob []byte
 	var settingsRaw jsonObjectRaw
@@ -117,19 +122,19 @@ func getSettings() jsonObjectRaw {
 	case "windows":
 		userConfig = os.Getenv("APPDATA")
 		if userConfig == "" {
-			stderr.Fatal("Error: unable to find user config (no APPDATA environment variable)")
+			return nil, errors.New("Error: unable to find user config (no APPDATA environment variable)")
 		}
 		settingsBlob, err = readSettingsBlob(userConfig)
 	}
 	// Did the log read succeed
 	if err != nil {
-		stderr.Fatal(err)
+		return nil, errors.Wrap(err, "unable to read settings")
 	}
 	err = json.Unmarshal(settingsBlob, &settingsRaw)
 	if err != nil {
-		stderr.Fatal(err)
+		return nil, errors.Wrap(err, "unable to decode settings")
 	}
-	return settingsRaw
+	return settingsRaw, nil
 }
 
 // Search fon all png files under the current path
@@ -142,10 +147,7 @@ func pathMap(collectionName, basePath string) filepath.WalkFunc {
 		tileName := info.Name()
 		lenPath := len(path)
 		if lenPath > 4 && path[lenPath-4:] == ".png" {
-			relPathTile, err := filepath.Rel(basePath, path)
-			if err != nil {
-				stderr.Fatal("Error: ", path, " is not under ", basePath, ": ", err)
-			}
+			relPathTile, _ := filepath.Rel(basePath, path)
 			var tp tilePosition
 			tp.collection = collectionName
 			tp.path = filepath.ToSlash(filepath.Clean(relPathTile))
@@ -155,27 +157,18 @@ func pathMap(collectionName, basePath string) filepath.WalkFunc {
 	}
 }
 
-func main() {
-	if len(os.Args) != 3 {
-		stderr.Println("Usage:", os.Args[0], "HexkitPath MapPath")
-		return
-	}
-
-	// Prepare regexp
-	nameSelect := regexp.MustCompile(`[^:/\\]+$`)
-	tilepathCut := regexp.MustCompile(`:/{0,2}`)
+func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 	// Build the list of collections
 	collectionsDir := make(map[string]string)
-	settings := getSettings()
 	collections, err := getJSONRawObject(settings, "tiles")
 	if err != nil {
-		stderr.Fatal("Error: unable to parse user settings: ", err)
+		return nil, errors.Wrap(err, "unable to access the \"tiles\" list")
 	}
 	for name, collectionBlob := range *collections {
 		var collection jsonObject
 		err := json.Unmarshal(collectionBlob, &collection)
 		if err != nil {
-			stderr.Fatal("Error: unable to parse user settings: ", err)
+			return nil, errors.Wrapf(err, "unable to parse tiles[%s]", name)
 		}
 		// Ignore source if hidden
 		hiddenIntf, ok := collection["hidden"]
@@ -187,11 +180,11 @@ func main() {
 		}
 		pathIntf, ok := collection["path"]
 		if !ok {
-			stderr.Fatal("Error: unable to parse user settings: no path for", name)
+			return nil, errors.Wrapf(err, "no path for %s", name)
 		}
 		path, ok := pathIntf.(string)
 		if !ok {
-			stderr.Fatal("Error: unable to parse user settings: the path for", name, "is not a string")
+			return nil, errors.Wrapf(err, "the path for %s is not a string", name)
 		}
 		// Relative collection path
 		if !filepath.IsAbs(path) {
@@ -201,14 +194,32 @@ func main() {
 		// Absolute collection path
 		collectionsDir[name] = path
 	}
+	return &collectionsDir, nil
 
+}
+
+func main() {
+	if len(os.Args) != 3 {
+		stderr.Println("Usage:", os.Args[0], "HexkitPath MapPath")
+		return
+	}
+	// Read the settngs and get the
+	settings, err := getSettings()
+	if err != nil {
+		log.Fatal("Unable to read user settings: ", err)
+	}
+	collectionsDir, err := getCollectionDir(settings)
+	if err != nil {
+		log.Fatal("Unable to read the list of collections: ", err)
+	}
 	// Build the list of PNG files
-	for name, path := range collectionsDir {
+	for name, path := range *collectionsDir {
 		err := filepath.Walk(path, pathMap(name, path))
 		if err != nil {
 			stderr.Fatal(err)
 		}
 	}
+
 	// Read the file
 	mapFile := os.Args[2]
 	mapBlob, err := ioutil.ReadFile(mapFile)
