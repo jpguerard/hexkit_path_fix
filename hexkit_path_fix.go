@@ -83,6 +83,21 @@ func getJSONObject(r jsonObjectRaw, k string) (*jsonObject, error) {
 	return &decodedObject, nil
 }
 
+func readMapFile(path string) (*jsonObjectRaw, error) {
+	// Read the file
+	mapBlob, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "read failed")
+	}
+	// Decode it in hexMap
+	var hexMap jsonObjectRaw
+	err = json.Unmarshal(mapBlob, &hexMap)
+	if err != nil {
+		return nil, errors.Wrap(err, "map file decode failed")
+	}
+	return &hexMap, nil
+}
+
 func findHomeDir() string {
 	u, err := user.Current()
 	if err != nil {
@@ -219,23 +234,13 @@ func main() {
 			stderr.Fatal(err)
 		}
 	}
-
 	// Read the file
-	mapFile := os.Args[2]
-	mapBlob, err := ioutil.ReadFile(mapFile)
+	hexMap, err := readMapFile(os.Args[2])
 	if err != nil {
-		stderr.Fatal(err)
+		stderr.Fatal("Error: unable to read map file: ", err)
 	}
-
-	// Decode it in hexMap
-	var hexMap jsonObjectRaw
-	err = json.Unmarshal(mapBlob, &hexMap)
-	if err != nil {
-		stderr.Fatal(err)
-	}
-
 	// Get the layers list
-	layers, err := getJSONRawSlice(hexMap, "layers")
+	layers, err := getJSONRawSlice(*hexMap, "layers")
 	if err != nil {
 		stderr.Fatal("Map format error", err)
 	}
@@ -320,9 +325,9 @@ func main() {
 		if err != nil {
 			stderr.Fatal(err)
 		}
-		hexMap["layers"] = layersBlob
+		(*hexMap)["layers"] = layersBlob
 	}
-	b, err := json.Marshal(hexMap)
+	b, err := json.Marshal(*hexMap)
 	if err != nil {
 		stderr.Fatal(err)
 	}
