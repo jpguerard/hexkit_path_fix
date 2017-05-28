@@ -98,12 +98,12 @@ func readMapFile(path string) (*jsonObjectRaw, error) {
 	return &hexMap, nil
 }
 
-func findHomeDir() string {
+func findHomeDir() (string, error) {
 	u, err := user.Current()
 	if err != nil {
-		stderr.Fatal("Error: unable to get the username: ", err)
+		return "", errors.Wrap(err, "unable to get user information: ")
 	}
-	return u.HomeDir
+	return u.HomeDir, nil
 }
 
 func readSettingsBlob(userConfig string) ([]byte, error) {
@@ -121,7 +121,10 @@ func getSettings() (jsonObjectRaw, error) {
 	var err error
 	switch runtime.GOOS {
 	case "darwin":
-		homeDir := findHomeDir()
+		homeDir, err := findHomeDir()
+		if err != nil {
+			return nil, err
+		}
 		userConfig = filepath.Join(homeDir, "Library", "Application Support")
 		settingsBlob, err = readSettingsBlob(userConfig)
 	case "linux":
@@ -130,7 +133,10 @@ func getSettings() (jsonObjectRaw, error) {
 			settingsBlob, err = readSettingsBlob(userConfig)
 		}
 		if userConfig == "" || err != nil {
-			homeDir := findHomeDir()
+			homeDir, err := findHomeDir()
+			if err != nil {
+				return nil, err
+			}
 			userConfig = filepath.Join(homeDir, ".config")
 			settingsBlob, err = readSettingsBlob(userConfig)
 		}
