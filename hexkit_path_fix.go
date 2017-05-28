@@ -39,7 +39,7 @@ func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 	var rawSlice []jsonObjectRaw
 	err := json.Unmarshal(blob, &rawSlice)
 	if err != nil {
-		return nil, errors.Wrap(err, "JSON unmarshal failed")
+		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &rawSlice, nil
 }
@@ -52,7 +52,7 @@ func getJSONSlice(r jsonObjectRaw, k string) (*[]jsonObject, error) {
 	var decodedSlice []jsonObject
 	err := json.Unmarshal(blob, &decodedSlice)
 	if err != nil {
-		return nil, errors.Wrap(err, "JSON unmarshal failed")
+		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &decodedSlice, nil
 }
@@ -65,7 +65,7 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 	var decodedObject jsonObjectRaw
 	err := json.Unmarshal(blob, &decodedObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "JSON unmarshal failed")
+		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &decodedObject, nil
 }
@@ -78,7 +78,7 @@ func getJSONObject(r jsonObjectRaw, k string) (*jsonObject, error) {
 	var decodedObject jsonObject
 	err := json.Unmarshal(blob, &decodedObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "JSON unmarshal failed")
+		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &decodedObject, nil
 }
@@ -250,7 +250,6 @@ func main() {
 	if err != nil {
 		stderr.Fatal("Map format error", err)
 	}
-
 	// Search for tiles
 	layersModified := false
 	for i, v := range *layers {
