@@ -206,6 +206,61 @@ func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 
 }
 
+func tileUpdate(t *jsonObject) (modified bool, err error) {
+	sourceBlob, ok := (*t)["source"]
+	if !ok {
+		return false, errors.New("no tile source found")
+	}
+	source, ok := sourceBlob.(string)
+	if !ok {
+		return false, errors.New("incorrect tile source (not a string)")
+	}
+	// Skip the default blank tiles
+	if source[:6] == "Blank:" {
+		return false, nil
+	}
+	// Have we found the tile
+	fileName := nameSelect.FindString(source)
+	pathList, ok := fileList[fileName]
+	if !ok {
+		return false, fmt.Errorf("unknown tile %s (%s)", fileName, source)
+	}
+	// Search for the current path in the
+	firstSplit := tilepathCut.Split(source, 2)
+	if len(firstSplit) < 2 {
+		return false, fmt.Errorf("no \":\" in source (%s)", source)
+	}
+	targetCollection := firstSplit[0]
+	targetPath := firstSplit[1]
+	var bestScore int
+	var selected tilePosition
+pathSearch:
+	for _, p := range pathList {
+		// The tiles still exists at the same place. We keep it.
+		if targetCollection == p.collection && targetPath == p.path {
+			break pathSearch
+		}
+		currentScore := len(p.path)
+		// A tile in the same collection will be preferred
+		if targetCollection == p.collection && (currentScore+256) > bestScore {
+			bestScore = currentScore + 256
+			selected = p
+		}
+		// Otherwise, take the longer path
+		if currentScore > bestScore {
+			bestScore = currentScore
+			selected = p
+		}
+	}
+	// A new value was found: update the source
+	if selected.collection != "" && selected.path != "" {
+		modified = true
+		(*t)["source"] = selected.collection + "://" + selected.path
+	}
+	return modified, nil
+
+}
+
 func main() {
 	if len(os.Args) != 3 {
 		stderr.Println("Usage:", os.Args[0], "HexkitPath MapPath")
@@ -237,71 +292,26 @@ func main() {
 	if err != nil {
 		stderr.Fatal("Map format error", err)
 	}
-	// Search for tiles
+	// Search each layer
 	layersModified := false
 	for i, v := range *layers {
 		tiles, err := getJSONSlice(v, "tiles")
 		if err != nil {
-			stderr.Fatal("Map format error in layer ", i+1, ": ", err)
+			stderr.Fatal("Map format error: layer ", i+1, ": ", err)
 		}
-		// Search for the source of tiles
+		// Update all tiles
 		tilesModified := false
 		for j, t := range *tiles {
 			// Ignore undefined tiles
 			if t == nil {
 				continue
 			}
-			sourceBlob, ok := t["source"]
-			if !ok {
-				stderr.Println("Warning: layer", i+1, "tile", j+1, "no tile source found")
+			modified, err := tileUpdate(&t)
+			if err != nil {
+				stderr.Println("Warning: layer", i+1, "tile", j+1, ":", err)
 				continue
 			}
-			source, ok := sourceBlob.(string)
-			if !ok {
-				stderr.Println("Warning: layer", i+1, "tile", j+1, "the tile source is incorrect (not a string)")
-				continue
-			}
-			// Skip the default blank tiles
-			if source[:6] == "Blank:" {
-				continue
-			}
-			// Have we found the tile
-			fileName := nameSelect.FindString(source)
-			pathList, ok := fileList[fileName]
-			if !ok {
-				stderr.Println("Warning: layer", i+1, "tile", j+1, "unable to find tile image file for", source)
-				continue
-			}
-			// Search for the current path in the
-			firstSplit := tilepathCut.Split(source, 2)
-			if len(firstSplit) < 2 {
-				stderr.Println("Warning: layer", i+1, "tile", j+1, "incorrect source: ", source)
-				continue
-			}
-			targetCollection := firstSplit[0]
-			targetPath := firstSplit[1]
-			var bestScore int
-			var selected tilePosition
-		pathSearch:
-			for _, p := range pathList {
-				if targetCollection == p.collection && targetPath == p.path {
-					break pathSearch
-				}
-				currentScore := len(p.path)
-				if targetCollection == p.collection && (currentScore+256) > bestScore {
-					bestScore = currentScore + 256
-					selected = p
-				}
-				if currentScore > bestScore {
-					bestScore = currentScore
-					selected = p
-				}
-			}
-			// A new value was found: update the source
-			if selected.collection != "" && selected.path != "" {
-				tilesModified = true
-				t["source"] = selected.collection + "://" + selected.path
-			}
+			tilesModified = tilesModified || modified
 		}
 		if tilesModified {
 			tilesBlob, err := json.Marshal(tiles)
