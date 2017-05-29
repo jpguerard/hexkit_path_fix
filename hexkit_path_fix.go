@@ -70,19 +70,6 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 	return &decodedObject, nil
 }
 
-func getJSONObject(r jsonObjectRaw, k string) (*jsonObject, error) {
-	blob, ok := r[k]
-	if !ok {
-		return nil, fmt.Errorf("no \"%s\" key in object", k)
-	}
-	var decodedObject jsonObject
-	err := json.Unmarshal(blob, &decodedObject)
-	if err != nil {
-		return nil, errors.Wrap(err, "JSON decode failed")
-	}
-	return &decodedObject, nil
-}
-
 func readMapFile(path string) (*jsonObjectRaw, error) {
 	// Read the file
 	mapBlob, err := ioutil.ReadFile(path)
