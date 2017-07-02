@@ -40,5 +40,5 @@ Always check the new map with HexKit before erasing the old map.
 
 Limitations:
 
- - Generators are not currently converted.
+ - Single tiles used in generators are not currently converted.
 
