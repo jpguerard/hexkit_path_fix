@@ -8,7 +8,7 @@ make_tar(){
   echo " * $3"
   build "$1" "$2"
   file hexkit_path_fix
-  tar cvf "release/hexkit_path_fix_$3.tar.bz2" hexkit_path_fix LICENSE README.md
+  tar cvjf "release/hexkit_path_fix_$3.tar.bz2" hexkit_path_fix LICENSE README.md
 }
 
 make_zip(){
