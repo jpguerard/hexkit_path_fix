@@ -40,5 +40,7 @@ Always check the new map with HexKit before erasing the old map.
 
 Limitations:
 
- - Single tiles used in generators are not currently converted.
+ - Map files include a copy of the generator used to build them. This is used to
+   add new rows or columns. Single tiles and folder names used in generators are
+   not currently converted.
 
