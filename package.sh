@@ -1,7 +1,12 @@
 #!/bin/sh
 
 build(){
-  TMPDIR="/home/fevrier/go_tmp" GOOS="$1" GOARCH="$2" go build
+  local OPTIONS=""
+  local GO="go"
+  if [ "$1" = "linux" ] ; then
+    OPTIONS="-buildmode=pie"
+  fi
+  TMPDIR="/home/fevrier/go_tmp" GOOS="$1" GOARCH="$2" ${GO} build ${OPTIONS}
 }
 
 make_tar(){
