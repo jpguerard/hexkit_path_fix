@@ -25,9 +25,6 @@ type tilePosition struct {
 // Log to standard error
 var stderr = log.New(os.Stderr, "", 0)
 
-// List of known file position
-var fileList = make(map[string][]tilePosition, 4096)
-
 var nameSelect = regexp.MustCompile(`[^:/\\]+$`)
 var tilepathCut = regexp.MustCompile(`:/{0,2}`)
 
@@ -146,7 +143,7 @@ func getSettings() (jsonObjectRaw, error) {
 }
 
 // Search fon all png files under the current path
-func pathMap(collectionName, basePath string) filepath.WalkFunc {
+func pathMap(collectionName, basePath string, fileList *map[string][]tilePosition) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			stderr.Println("Warning: while searching for PNG files: ", err)
@@ -159,7 +156,7 @@ func pathMap(collectionName, basePath string) filepath.WalkFunc {
 			var tp tilePosition
 			tp.collection = collectionName
 			tp.path = filepath.ToSlash(filepath.Clean(relPathTile))
-			fileList[tileName] = append(fileList[tileName], tp)
+			(*fileList)[tileName] = append((*fileList)[tileName], tp)
 		}
 		return nil
 	}
@@ -206,7 +203,7 @@ func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 
 }
 
-func tileUpdate(t *jsonObject) (modified bool, err error) {
+func tileUpdate(t *jsonObject, fileList map[string][]tilePosition) (modified bool, err error) {
 	sourceBlob, ok := (*t)["source"]
 	if !ok {
 		return false, errors.New("no tile source found")
@@ -261,6 +258,52 @@ pathSearch:
 
 }
 
+func updateMapFile(mapFile *jsonObjectRaw, fileList map[string][]tilePosition) error {
+	// Get the layers list
+	layers, err := getJSONRawSlice(*mapFile, "layers")
+	if err != nil {
+		return errors.Wrap(err, "Map format error")
+	}
+	// Search each layer
+	layersModified := false
+	for i, v := range *layers {
+		tiles, err := getJSONSlice(v, "tiles")
+		if err != nil {
+			return errors.Wrapf(err, "Layer %d: Map format error", i+1)
+		}
+		// Update all tiles
+		tilesModified := false
+		for j, t := range *tiles {
+			// Ignore undefined tiles
+			if t == nil {
+				continue
+			}
+			modified, err := tileUpdate(&t, fileList)
+			if err != nil {
+				stderr.Println("Warning: layer", i+1, "tile", j+1, ":", err)
+				continue
+			}
+			tilesModified = tilesModified || modified
+		}
+		if tilesModified {
+			tilesBlob, err := json.Marshal(tiles)
+			if err != nil {
+				return err
+			}
+			v["tiles"] = tilesBlob
+			layersModified = true
+		}
+	}
+	if layersModified {
+		layersBlob, err := json.Marshal(layers)
+		if err != nil {
+			return err
+		}
+		(*mapFile)["layers"] = layersBlob
+	}
+	return nil
+}
+
 func main() {
 	if len(os.Args) != 3 {
 		stderr.Println("Usage:", os.Args[0], "HexkitPath MapPath")
@@ -276,8 +319,9 @@ func main() {
 		log.Fatal("Unable to read the list of collections: ", err)
 	}
 	// Build the list of PNG files
+	fileList := make(map[string][]tilePosition, 4096)
 	for name, path := range *collectionsDir {
-		err := filepath.Walk(path, pathMap(name, path))
+		err := filepath.Walk(path, pathMap(name, path, &fileList))
 		if err != nil {
 			stderr.Fatal(err)
 		}
@@ -287,47 +331,9 @@ func main() {
 	if err != nil {
 		stderr.Fatal("Error: unable to read map file: ", err)
 	}
-	// Get the layers list
-	layers, err := getJSONRawSlice(*hexMap, "layers")
+	err = updateMapFile(hexMap, fileList)
 	if err != nil {
-		stderr.Fatal("Map format error", err)
-	}
-	// Search each layer
-	layersModified := false
-	for i, v := range *layers {
-		tiles, err := getJSONSlice(v, "tiles")
-		if err != nil {
-			stderr.Fatal("Map format error: layer ", i+1, ": ", err)
-		}
-		// Update all tiles
-		tilesModified := false
-		for j, t := range *tiles {
-			// Ignore undefined tiles
-			if t == nil {
-				continue
-			}
-			modified, err := tileUpdate(&t)
-			if err != nil {
-				stderr.Println("Warning: layer", i+1, "tile", j+1, ":", err)
-				continue
-			}
-			tilesModified = tilesModified || modified
-		}
-		if tilesModified {
-			tilesBlob, err := json.Marshal(tiles)
-			if err != nil {
-				stderr.Fatal(err)
-			}
-			v["tiles"] = tilesBlob
-			layersModified = true
-		}
-	}
-	if layersModified {
-		layersBlob, err := json.Marshal(layers)
-		if err != nil {
-			stderr.Fatal(err)
-		}
-		(*hexMap)["layers"] = layersBlob
+		stderr.Fatal(err)
 	}
 	b, err := json.Marshal(*hexMap)
 	if err != nil {
