@@ -34,8 +34,7 @@ func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var rawSlice []jsonObjectRaw
-	err := json.Unmarshal(blob, &rawSlice)
-	if err != nil {
+	if err := json.Unmarshal(blob, &rawSlice); err != nil {
 		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &rawSlice, nil
@@ -47,8 +46,7 @@ func getJSONSlice(r jsonObjectRaw, k string) (*[]jsonObject, error) {
 		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var decodedSlice []jsonObject
-	err := json.Unmarshal(blob, &decodedSlice)
-	if err != nil {
+	if err := json.Unmarshal(blob, &decodedSlice); err != nil {
 		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &decodedSlice, nil
@@ -60,8 +58,8 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 		return nil, fmt.Errorf("no \"%s\" key in object", k)
 	}
 	var decodedObject jsonObjectRaw
-	err := json.Unmarshal(blob, &decodedObject)
-	if err != nil {
+
+	if err := json.Unmarshal(blob, &decodedObject); err != nil {
 		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &decodedObject, nil
@@ -75,8 +73,7 @@ func readMapFile(path string) (*jsonObjectRaw, error) {
 	}
 	// Decode it in hexMap
 	var hexMap jsonObjectRaw
-	err = json.Unmarshal(mapBlob, &hexMap)
-	if err != nil {
+	if err = json.Unmarshal(mapBlob, &hexMap); err != nil {
 		return nil, errors.Wrap(err, "JSON decode failed")
 	}
 	return &hexMap, nil
@@ -171,8 +168,7 @@ func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 	}
 	for name, collectionBlob := range *collections {
 		var collection jsonObject
-		err := json.Unmarshal(collectionBlob, &collection)
-		if err != nil {
+		if err := json.Unmarshal(collectionBlob, &collection); err != nil {
 			return nil, errors.Wrapf(err, "unable to parse tiles[%s]", name)
 		}
 		// Ignore source if hidden
@@ -321,8 +317,7 @@ func main() {
 	// Build the list of PNG files
 	fileList := make(map[string][]tilePosition, 4096)
 	for name, path := range *collectionsDir {
-		err := filepath.Walk(path, pathMap(name, path, &fileList))
-		if err != nil {
+		if err := filepath.Walk(path, pathMap(name, path, &fileList)); err != nil {
 			stderr.Fatal(err)
 		}
 	}
@@ -331,8 +326,7 @@ func main() {
 	if err != nil {
 		stderr.Fatal("Error: unable to read map file: ", err)
 	}
-	err = updateMapFile(hexMap, fileList)
-	if err != nil {
+	if err = updateMapFile(hexMap, fileList); err != nil {
 		stderr.Fatal(err)
 	}
 	b, err := json.Marshal(*hexMap)
