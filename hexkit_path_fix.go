@@ -308,11 +308,11 @@ func main() {
 	// Read the settngs and get the
 	settings, err := getSettings()
 	if err != nil {
-		log.Fatal("Unable to read user settings: ", err)
+		stderr.Fatal("Unable to read user settings: ", err)
 	}
 	collectionsDir, err := getCollectionDir(settings)
 	if err != nil {
-		log.Fatal("Unable to read the list of collections: ", err)
+		stderr.Fatal("Unable to read the list of collections: ", err)
 	}
 	// Build the list of PNG files
 	fileList := make(map[string][]tilePosition, 4096)
