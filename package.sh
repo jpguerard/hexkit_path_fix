@@ -2,8 +2,8 @@
 
 build(){
   local OPTIONS=""
-  local GO="vgo"
-  if [ "$1" = "linux" ] ; then
+  local GO="go"
+  if [ "$3" = "linux64" ] ; then
     OPTIONS="-buildmode=pie"
   fi
   GOTMPDIR="/home/fevrier/go_tmp" GOOS="$1" GOARCH="$2" ${GO} build ${OPTIONS}
