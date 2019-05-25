@@ -99,7 +99,7 @@ func getSettings() (jsonObjectRaw, error) {
 	var userConfig string
 	var settingsBlob []byte
 	var settingsRaw jsonObjectRaw
-	var err error
+	var err, sysErr error
 	switch runtime.GOOS {
 	case "darwin":
 		homeDir, err := findHomeDir()
@@ -107,7 +107,7 @@ func getSettings() (jsonObjectRaw, error) {
 			return nil, err
 		}
 		userConfig = filepath.Join(homeDir, "Library", "Application Support")
-		settingsBlob, err = readSettingsBlob(userConfig)
+		settingsBlob, sysErr = readSettingsBlob(userConfig)
 	case "linux":
 		userConfig = os.Getenv("XDG_CONFIG_HOME")
 		if userConfig != "" {
@@ -119,17 +119,17 @@ func getSettings() (jsonObjectRaw, error) {
 				return nil, err
 			}
 			userConfig = filepath.Join(homeDir, ".config")
-			settingsBlob, err = readSettingsBlob(userConfig)
+			settingsBlob, sysErr = readSettingsBlob(userConfig)
 		}
 	case "windows":
 		userConfig = os.Getenv("APPDATA")
 		if userConfig == "" {
 			return nil, errors.New("Error: unable to find user config (no APPDATA environment variable)")
 		}
-		settingsBlob, err = readSettingsBlob(userConfig)
+		settingsBlob, sysErr = readSettingsBlob(userConfig)
 	}
 	// Did the log read succeed
-	if err != nil {
+	if sysErr != nil {
 		return nil, errors.Wrap(err, "unable to read settings")
 	}
 	err = json.Unmarshal(settingsBlob, &settingsRaw)
