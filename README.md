@@ -1,4 +1,7 @@
 # hexkit_path_fix
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/jpguerard/hexkit_path_fix)](https://goreportcard.com/report/github.com/jpguerard/hexkit_path_fix)
+
 Fix an [HexKit](http://www.hex-kit.com/) map file after some hex have
 been moved
 
