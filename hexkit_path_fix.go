@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,8 +11,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-
-	"github.com/pkg/errors"
 )
 
 type jsonObjectRaw map[string]json.RawMessage
@@ -35,7 +34,7 @@ func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 	}
 	var rawSlice []jsonObjectRaw
 	if err := json.Unmarshal(blob, &rawSlice); err != nil {
-		return nil, errors.Wrap(err, "JSON decode failed")
+		return nil, fmt.Errorf("JSON decode failed: %w", err)
 	}
 	return &rawSlice, nil
 }
@@ -47,7 +46,7 @@ func getJSONSlice(r jsonObjectRaw, k string) (*[]jsonObject, error) {
 	}
 	var decodedSlice []jsonObject
 	if err := json.Unmarshal(blob, &decodedSlice); err != nil {
-		return nil, errors.Wrap(err, "JSON decode failed")
+		return nil, fmt.Errorf("JSON decode failed: %w", err)
 	}
 	return &decodedSlice, nil
 }
@@ -60,7 +59,7 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 	var decodedObject jsonObjectRaw
 
 	if err := json.Unmarshal(blob, &decodedObject); err != nil {
-		return nil, errors.Wrap(err, "JSON decode failed")
+		return nil, fmt.Errorf("JSON decode failed: %w", err)
 	}
 	return &decodedObject, nil
 }
@@ -69,12 +68,12 @@ func readMapFile(path string) (*jsonObjectRaw, error) {
 	// Read the file
 	mapBlob, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "read failed")
+		return nil, fmt.Errorf("read failed: %w", err)
 	}
 	// Decode it in hexMap
 	var hexMap jsonObjectRaw
 	if err = json.Unmarshal(mapBlob, &hexMap); err != nil {
-		return nil, errors.Wrap(err, "JSON decode failed")
+		return nil, fmt.Errorf("JSON decode failed: %w", err)
 	}
 	return &hexMap, nil
 }
@@ -82,7 +81,7 @@ func readMapFile(path string) (*jsonObjectRaw, error) {
 func findHomeDir() (string, error) {
 	u, err := user.Current()
 	if err != nil {
-		return "", errors.Wrap(err, "unable to get user information: ")
+		return "", fmt.Errorf("unable to get user information: %w", err)
 	}
 	return u.HomeDir, nil
 }
@@ -130,11 +129,11 @@ func getSettings() (jsonObjectRaw, error) {
 	}
 	// Did the log read succeed
 	if sysErr != nil {
-		return nil, errors.Wrap(err, "unable to read settings")
+		return nil, fmt.Errorf("unable to read settings: %w", err)
 	}
 	err = json.Unmarshal(settingsBlob, &settingsRaw)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode settings")
+		return nil, fmt.Errorf("unable to decode settings: %w", err)
 	}
 	return settingsRaw, nil
 }
@@ -164,12 +163,12 @@ func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 	collectionsDir := make(map[string]string)
 	collections, err := getJSONRawObject(settings, "tiles")
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to access the \"tiles\" list")
+		return nil, fmt.Errorf("unable to access the \"tiles\" list: %w", err)
 	}
 	for name, collectionBlob := range *collections {
 		var collection jsonObject
 		if err := json.Unmarshal(collectionBlob, &collection); err != nil {
-			return nil, errors.Wrapf(err, "unable to parse tiles[%s]", name)
+			return nil, fmt.Errorf("unable to parse tiles[%s]: %w", name, err)
 		}
 		// Ignore source if hidden
 		hiddenIntf, ok := collection["hidden"]
@@ -181,11 +180,11 @@ func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 		}
 		pathIntf, ok := collection["path"]
 		if !ok {
-			return nil, errors.Wrapf(err, "no path for %s", name)
+			return nil, fmt.Errorf("no path for %s: %w", name, err)
 		}
 		path, ok := pathIntf.(string)
 		if !ok {
-			return nil, errors.Wrapf(err, "the path for %s is not a string", name)
+			return nil, fmt.Errorf("the path for %s is not a string: %w", name, err)
 		}
 		// Relative collection path
 		if !filepath.IsAbs(path) {
@@ -258,14 +257,14 @@ func updateMapFile(mapFile *jsonObjectRaw, fileList map[string][]tilePosition) e
 	// Get the layers list
 	layers, err := getJSONRawSlice(*mapFile, "layers")
 	if err != nil {
-		return errors.Wrap(err, "Map format error")
+		return fmt.Errorf("Map format error: %w", err)
 	}
 	// Search each layer
 	layersModified := false
 	for i, v := range *layers {
 		tiles, err := getJSONSlice(v, "tiles")
 		if err != nil {
-			return errors.Wrapf(err, "Layer %d: Map format error", i+1)
+			return fmt.Errorf("Layer %d: Map format error: %w", i+1, err)
 		}
 		// Update all tiles
 		tilesModified := false
