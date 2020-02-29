@@ -6,7 +6,7 @@ build(){
   if [ "$3" = "linux64" ] ; then
     OPTIONS="-buildmode=pie"
   fi
-  GOTMPDIR="/home/fevrier/go_tmp" GOOS="$1" GOARCH="$2" ${GO} build -trimpath ${OPTIONS}
+  CGO_ENABLED=0 GOTMPDIR="/home/fevrier/go_tmp" GOOS="$1" GOARCH="$2" ${GO} build -trimpath ${OPTIONS}
 }
 
 make_tar(){
