@@ -26,6 +26,7 @@ make_zip(){
 rm -f release/*
 rmdir release
 mkdir -p release
+go mod tidy
 make_zip windows 386   win32
 make_zip windows amd64 win64
 make_tar darwin  386   darwin32
