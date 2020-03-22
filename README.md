@@ -31,7 +31,7 @@ Usage :
 For example:
 
 ```
-    # On Windows
+    REM On Windows
     hexkit_path_fix.exe "C:\Hex Kit-win32-x64" Octarine.map > NewOctarine.map
 
     # On Linux

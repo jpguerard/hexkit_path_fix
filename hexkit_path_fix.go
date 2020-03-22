@@ -10,7 +10,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
-	"runtime"
 )
 
 type jsonObjectRaw map[string]json.RawMessage
@@ -93,42 +92,17 @@ func readSettingsBlob(userConfig string) ([]byte, error) {
 	return settingsBlob, err
 }
 
-// https://electron.atom.io/docs/api/app/#appgetpathname
 func getSettings() (jsonObjectRaw, error) {
 	var userConfig string
 	var settingsBlob []byte
 	var settingsRaw jsonObjectRaw
-	var err, sysErr error
-	switch runtime.GOOS {
-	case "darwin":
-		homeDir, err := findHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		userConfig = filepath.Join(homeDir, "Library", "Application Support")
-		settingsBlob, sysErr = readSettingsBlob(userConfig)
-	case "linux":
-		userConfig = os.Getenv("XDG_CONFIG_HOME")
-		if userConfig != "" {
-			settingsBlob, err = readSettingsBlob(userConfig)
-		}
-		if userConfig == "" || err != nil {
-			homeDir, err := findHomeDir()
-			if err != nil {
-				return nil, err
-			}
-			userConfig = filepath.Join(homeDir, ".config")
-			settingsBlob, sysErr = readSettingsBlob(userConfig)
-		}
-	case "windows":
-		userConfig = os.Getenv("APPDATA")
-		if userConfig == "" {
-			return nil, errors.New("Error: unable to find user config (no APPDATA environment variable)")
-		}
-		settingsBlob, sysErr = readSettingsBlob(userConfig)
+	var err error
+	userConfig, err = os.UserConfigDir()
+	if err != nil {
+		return nil, err
 	}
-	// Did the log read succeed
-	if sysErr != nil {
+	settingsBlob, err = readSettingsBlob(userConfig)
+	if err != nil {
 		return nil, fmt.Errorf("unable to read settings: %w", err)
 	}
 	err = json.Unmarshal(settingsBlob, &settingsRaw)
