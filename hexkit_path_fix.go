@@ -222,7 +222,7 @@ pathSearch:
 	// A new value was found: update the source
 	if selected.collection != "" && selected.path != "" {
 		modified = true
-		(*t)["source"] = selected.collection + "://" + selected.path
+		(*t)["source"] = selected.collection + ":/" + selected.path
 	}
 	return modified, nil
 
