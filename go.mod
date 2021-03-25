@@ -1,3 +1,3 @@
 module github.com/jpguerard/hexkit_path_fix
 
-go 1.13
+go 1.16

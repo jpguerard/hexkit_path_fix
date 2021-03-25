@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -113,13 +114,13 @@ func getSettings() (jsonObjectRaw, error) {
 }
 
 // Search fon all png files under the current path
-func pathMap(collectionName, basePath string, fileList *map[string][]tilePosition) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
+func pathMap(collectionName, basePath string, fileList *map[string][]tilePosition) fs.WalkDirFunc {
+	return func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			stderr.Println("Warning: while searching for PNG files: ", err)
 			return nil
 		}
-		tileName := info.Name()
+		tileName := d.Name()
 		lenPath := len(path)
 		if lenPath > 4 && path[lenPath-4:] == ".png" {
 			relPathTile, _ := filepath.Rel(basePath, path)
@@ -290,7 +291,7 @@ func main() {
 	// Build the list of PNG files
 	fileList := make(map[string][]tilePosition, 4096)
 	for name, path := range *collectionsDir {
-		if err := filepath.Walk(path, pathMap(name, path, &fileList)); err != nil {
+		if err := filepath.WalkDir(path, pathMap(name, path, &fileList)); err != nil {
 			stderr.Fatal(err)
 		}
 	}
