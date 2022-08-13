@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 )
@@ -75,14 +74,6 @@ func readMapFile(path string) (*jsonObjectRaw, error) {
 		return nil, fmt.Errorf("JSON decode failed: %w", err)
 	}
 	return &hexMap, nil
-}
-
-func findHomeDir() (string, error) {
-	u, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("unable to get user information: %w", err)
-	}
-	return u.HomeDir, nil
 }
 
 func readSettingsBlob(userConfig string) ([]byte, error) {
