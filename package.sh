@@ -24,7 +24,6 @@ mkdir -p release
 go mod tidy
 make_zip windows 386 win32
 make_zip windows amd64 win64
-make_tar darwin 386 darwin32
 make_tar darwin amd64 darwin64
 make_tar linux 386 linux32
 make_tar linux amd64 linux64
