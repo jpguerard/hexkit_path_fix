@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -66,7 +65,7 @@ func getJSONRawObject(r jsonObjectRaw, k string) (*jsonObjectRaw, error) {
 
 func readMapFile(path string) (*jsonObjectRaw, error) {
 	// Read the file
-	mapBlob, err := ioutil.ReadFile(path)
+	mapBlob, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read failed: %w", err)
 	}
@@ -89,7 +88,7 @@ func findHomeDir() (string, error) {
 func readSettingsBlob(userConfig string) ([]byte, error) {
 	settings := filepath.Join(userConfig, "hex-kit", "Settings")
 	stderr.Print("Reading user settings from: ", settings)
-	settingsBlob, err := ioutil.ReadFile(settings)
+	settingsBlob, err := os.ReadFile(settings)
 	return settingsBlob, err
 }
 
