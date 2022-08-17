@@ -11,8 +11,10 @@ import (
 	"regexp"
 )
 
-type jsonObjectRaw map[string]json.RawMessage
-type jsonObject map[string]interface{}
+type (
+	jsonObjectRaw map[string]json.RawMessage
+	jsonObject    map[string]interface{}
+)
 
 type tilePosition struct {
 	collection string
@@ -22,8 +24,10 @@ type tilePosition struct {
 // Log to standard error
 var stderr = log.New(os.Stderr, "", 0)
 
-var nameSelect = regexp.MustCompile(`[^:/\\]+$`)
-var tilepathCut = regexp.MustCompile(`:/{0,2}`)
+var (
+	nameSelect  = regexp.MustCompile(`[^:/\\]+$`)
+	tilepathCut = regexp.MustCompile(`:/{0,2}`)
+)
 
 func getJSONRawSlice(r jsonObjectRaw, k string) (*[]jsonObjectRaw, error) {
 	blob, ok := r[k]
@@ -160,7 +164,6 @@ func getCollectionDir(settings jsonObjectRaw) (*map[string]string, error) {
 		collectionsDir[name] = path
 	}
 	return &collectionsDir, nil
-
 }
 
 func tileUpdate(t *jsonObject, fileList map[string][]tilePosition) (modified bool, err error) {
@@ -215,7 +218,6 @@ pathSearch:
 		(*t)["source"] = selected.collection + ":/" + selected.path
 	}
 	return modified, nil
-
 }
 
 func updateMapFile(mapFile *jsonObjectRaw, fileList map[string][]tilePosition) error {
